@@ -55,7 +55,9 @@ private extension String {
 
 private extension Array where Element: CustomStringConvertible {
     func paragraph() -> String {
-        return self.map({ $0.description }).joined(separator: "\n")
+        return reduce([String]()) { arr, obj in
+            return arr + [obj.description]
+        }.joined(separator: "\n")
     }
 }
 
@@ -105,15 +107,17 @@ public struct TextTable {
     public init<T: TextTableObject>(objects: [T], header: String? = nil) {
         self.header = header ?? T.tableHeader
         columns = T.columnHeaders.map { TextTableColumn(header: $0) }
-        objects.forEach { addRow(values: $0.tableValues) }
+        for obj in objects {
+            addRow(values: obj.tableValues)
+        }
     }
 
     public mutating func addRow(values: [CustomStringConvertible]) {
         let values = values.count >= columns.count ? values :
             values + [CustomStringConvertible](repeating: "", count: columns.count - values.count)
-        columns = zip(columns, values).map {
-            (column, value) in
-            var column = column
+        columns = zip(columns, values).map { columnValue in
+            let (_column, value) = columnValue
+            var column = _column
             column.values.append(value.description)
             return column
         }
